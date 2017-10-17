@@ -1,10 +1,14 @@
 #include <cstdio>
 #include <cstdlib>
 #include <getopt.h>
+#include <iostream>
 
 #include "../headers/Options.hpp"
+#include "../headers/Process.hpp"
 
-static int verbose_flag;
+using namespace std;
+
+//static int verbose_flag;
 
 int main (int argc, char** argv)
 {
@@ -101,11 +105,24 @@ int main (int argc, char** argv)
         putchar ('\n');
     }*/
 
-    int a = 0;
-    Args::getArgs(argc, argv, std::vector<OptionAbstract> {
-            {'o',"ola",HasArgument::OPTIONAL_ARGUMENT,[](){printf("Option ola!");}},
+    /*int a = 0;
+    const Args& args = Args::getArgs(argc, argv, std::vector<OptionAbstract> {
+            {'o',"ola",HasArgument::OPTIONAL_ARGUMENT,[](){printf("Option ola!\n");}},
             OptionAbstract('a',"adeus").setFlag(&a,2)
     });
+
+    cout << "a=" << a << endl << endl;
+
+    for(const auto & e : args.getUsedOptions())
+        cout << *e << endl;*/
+
+    Process * test = new Process("sleep 3");
+    test->start();
+    test->join();
+
+    delete test;
+
+    Thread::usleep(100);
 
     exit (0);
 }

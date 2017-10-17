@@ -2,18 +2,22 @@
 
 #include <stdlib.h>
 #include <cstring>
+#include <iostream>
+#include <sstream>
 #include "../headers/exitCodes.hpp"
+
+using namespace std;
 
 //----------------------OptionAbstract----------------------//
 
 int dummy;
-std::function<void()> OptionAbstract::EMPTY_FUNCTION = [](){};
+function<void()> OptionAbstract::EMPTY_FUNCTION = [](){};
 const HasArgument OptionAbstract::DEFAULT_HAS_ARGUMENT = HasArgument::NO_ARGUMENT;
 
 OptionAbstract::OptionAbstract(const int &shortForm,
-                               const std::string &longForm,
+                               const string &longForm,
                                const HasArgument &hasArgument,
-                               const std::function<void()> &action) :
+                               const function<void()> &action) :
         _hasArgument(hasArgument),
         longForm(longForm),
         shortForm(shortForm),
@@ -34,12 +38,12 @@ bool OptionAbstract::hasLongForm() const {
     return !getLongForm().empty();
 }
 
-const std::string & OptionAbstract::getLongForm() const {
+const string & OptionAbstract::getLongForm() const {
     return longForm;
 }
 
 bool OptionAbstract::hasShortForm() const {
-    return !getShortForm();
+    return getShortForm() != 0;
 }
 
 const int & OptionAbstract::getShortForm() const {
@@ -64,14 +68,15 @@ bool OptionAbstract::isOptionalArgument() const {
 
 //----------------------Option----------------------//
 
-std::string Option::makePrintableForm() const {
-    std::string ret;
-    ret.append(std::string("Long form: ") + (hasLongForm() ? ("'" + getLongForm() + "'") : "<doesn't have>") + "\n");
-    ret.append(std::string("Short form: ") + (hasShortForm() ? ("'" + std::to_string(getShortForm()) + "'") : "<doesn't have>") + "\n");
-    ret.append(std::string("Argument: ") + (hasArgument() ? ("'" + getArgument() + "'") : "<doesn't have>") + "\n");
+string Option::makePrintableForm() const {
+    stringstream ret;
+    ret << "Long form: " << (hasLongForm() ? ("'" + getLongForm() + "'") : "<doesn't have>") << endl;
+    ret << "Short form: " << (hasShortForm() ? (string("'") + (char)getShortForm() + "'") : "<doesn't have>") << endl;
+    ret << "Argument: " << (hasArgument() ? ("'" + getArgument() + "'") : "<doesn't have>") << endl;
+    return ret.str();
 }
 
-Option::Option(const OptionAbstract &optionTemplate, const std::string &argument) :
+Option::Option(const OptionAbstract &optionTemplate, const string &argument) :
         OptionAbstract(optionTemplate),
         argument(argument),
         printableForm(makePrintableForm()) {}
@@ -80,11 +85,11 @@ bool Option::hasArgument() const {
     return !argument.empty();
 }
 
-const std::string& Option::getArgument() const {
+const string& Option::getArgument() const {
     return argument;
 }
 
-void Option::doAction() {
+void Option::doAction() const {
     if(flag != nullptr)
         *flag = flagValue;
     action();
@@ -92,16 +97,23 @@ void Option::doAction() {
 
 //----------------------Args----------------------//
 
-Args::Args(int argc, char **argv, const std::vector<OptionAbstract> &opts) {
+Args::Args(int argc, char **argv, const vector<OptionAbstract> &opts) {
     int c, prev_optind = optind, prev_opterr = opterr;
 
-    opterr = 0;
+    opterr = 1;
     optind = 1;
 
     options.clear();
 
     struct option* longOptions  = makeLongOptions (opts);
     char* shortOptions          = makeShortOptions(opts);
+
+    //cout << shortOptions << endl;
+
+    /*for(const auto & e : opts) {
+        cout << "Short:" << (char)e.getShortForm() << " ";
+        cout << "Long:" << e.getLongForm() << endl;
+    }*/
 
     while(true) {
         int option_index = 0;
@@ -114,7 +126,7 @@ Args::Args(int argc, char **argv, const std::vector<OptionAbstract> &opts) {
             break;
 
         else if(c == 0) {   //option by longForm
-            std::string longFormName = (longOptions[option_index].name);
+            string longFormName = (longOptions[option_index].name);
             for(const auto& it : opts)
                 if(it.hasLongForm() && it.getLongForm()==longFormName) {
                     currentOptionAbstract = &it;
@@ -123,6 +135,7 @@ Args::Args(int argc, char **argv, const std::vector<OptionAbstract> &opts) {
         }
 
         else if(c == '?' || c == ':') {
+            //cerr << "Option " << (char)optopt << " not recognized! " << (optarg?strlen(optarg):0) << "optopt: " << (char)c << endl;
             exit(exitcodes::UNKNOWN_LACKS_ARGUMENT_OPTION);
         }
 
@@ -138,7 +151,7 @@ Args::Args(int argc, char **argv, const std::vector<OptionAbstract> &opts) {
             exit(exitcodes::UNEXPECTED_ERROR);
 
         //Now that I have the option template, create the Option pointer for the return
-        Option* ___temp = new Option(*currentOptionAbstract, optarg == nullptr ? "" : optarg);
+        const Option* ___temp = new Option(*currentOptionAbstract, optarg == nullptr ? "" : optarg);
         options.push_back(___temp);
         ___temp->doAction();
     }
@@ -163,7 +176,7 @@ Args::~Args() {
     options.clear();
 }
 
-unsigned int Args::countLongOptions(const std::vector<OptionAbstract> &opts) {
+unsigned int Args::countLongOptions(const vector<OptionAbstract> &opts) {
     unsigned int counter = 0;
     for (const auto& it : opts)
         if(it.hasLongForm())
@@ -171,10 +184,10 @@ unsigned int Args::countLongOptions(const std::vector<OptionAbstract> &opts) {
     return counter;
 }
 
-struct option * Args::makeLongOptions(const std::vector<OptionAbstract> &opts) {
+struct option * Args::makeLongOptions(const vector<OptionAbstract> &opts) {
     unsigned int longOptionsCount = countLongOptions(opts);
     struct option* ret = new struct option[longOptionsCount+1];
-    for (int i = 0, longOptIndex = 0; i < opts.size() && longOptIndex < longOptionsCount; i++) {
+    for (unsigned int i = 0, longOptIndex = 0; i < opts.size() && longOptIndex < longOptionsCount; i++) {
         if (!opts[i].hasLongForm())
             continue;
 
@@ -200,18 +213,27 @@ struct option * Args::makeLongOptions(const std::vector<OptionAbstract> &opts) {
     return ret;
 }
 
-char *Args::makeShortOptions(const std::vector<OptionAbstract> &opts) {
-    std::string ret(":");
+char *Args::makeShortOptions(const vector<OptionAbstract> &opts) {
+    stringstream ret;
+    //ret << ':';
     for(auto it : opts) {
         if(!it.hasShortForm())
             continue;
-        ret.append( "" + (char)it.getShortForm() + std::string(it.isNoArgument() ? "" : it.isRequiredArgument() ? ":" : "::") );
+        ret << (char)it.getShortForm() << (it.isNoArgument() ? "" : it.isRequiredArgument() ? ":" : "::") ;
     }
-    return strdup(ret.c_str());
+    return strdup(ret.str().c_str());
 }
 
-const Args &Args::getArgs(int argc, char **argv, std::vector<OptionAbstract> opts) {
+const Args & Args::getArgs(int argc, char **argv, vector<OptionAbstract> opts) {
     const static Args instance(argc,argv, opts);
 
     return instance;
+}
+
+const std::vector<Option const *> &Args::getUsedOptions() const {
+    return options;
+}
+
+const std::vector<std::string> Args::getNonOptionArguments() const {
+    return args;
 }

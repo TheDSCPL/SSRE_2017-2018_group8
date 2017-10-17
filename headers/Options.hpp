@@ -54,7 +54,7 @@ private:
     const std::string argument;
     const std::string printableForm;
 
-    void doAction();
+    void doAction() const;
     std::string makePrintableForm() const;
     Option(const OptionAbstract & optionTemplate, const std::string & argument);
 public:
@@ -69,21 +69,24 @@ public:
 
 class Args {
 private:
-    std::vector<Option*> options;
+    std::vector<Option const *> options;
     std::vector<std::string> args;
 
     Args(int argc, char **argv, const std::vector<OptionAbstract> &opts);
     ~Args();
 
     static unsigned int countLongOptions(const std::vector<OptionAbstract> &opts);
-    static option * makeLongOptions(const std::vector<OptionAbstract> &opts);
-    static char* makeShortOptions(const std::vector<OptionAbstract> &opts);
+    static option *     makeLongOptions (const std::vector<OptionAbstract> &opts);
+    static char*        makeShortOptions(const std::vector<OptionAbstract> &opts);
 public:
     static const Args &getArgs(int argc = 0, char **argv = nullptr,
                                std::vector<OptionAbstract> opts = std::vector<OptionAbstract>());
 
     Args(Args const&)           = delete;
     void operator=(Args const&) = delete;
+
+    const std::vector<Option const *>&  getUsedOptions() const;
+    const std::vector<std::string>      getNonOptionArguments() const;
 };
 
 #endif
