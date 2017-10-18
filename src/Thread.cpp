@@ -3,6 +3,7 @@
 #include <thread>
 #include <iostream>
 #include <sys/time.h>
+#include <string.h>
 #include "../headers/Thread.hpp"
 
 using namespace std;
@@ -74,7 +75,9 @@ Thread::~Thread() {
 
 void Thread::start() {
     onStopCalledOnLastRun = false;
-    pthread_create(&thread, NULL, trick, (void *) this);
+    pthread_create(&thread, nullptr, trick, (void *) this);
+//    if(pthread_detach(thread))
+//        cerr << "Couldn't detach thread!" << endl;
 }
 
 void Thread::usleep(long millis) {
@@ -114,4 +117,5 @@ void Thread::cancel() {
     _onStop();
     //cout << "FINISHED CANCELING!" << endl;
     pthread_cancel(thread);
+    pthread_join(thread,nullptr);
 }

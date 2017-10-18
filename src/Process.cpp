@@ -11,21 +11,26 @@
 using namespace std;
 using namespace SSRE_CONSTANTS;
 
-vector<Process*> Process::processes;
+Mutex Process::newOperatorMutex;
+Mutex Process::processesSetMutex;
+volatile bool Process::lastCreateIsDynamic=false;
+set<Process*> Process::processes;
 
 Thread Process::watchdog([](){
 //pragmas to stop the endless loop warning
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
     while(true) {
+        processesSetMutex.lock();
         for(Process* p : Process::processes) {
-            cerr << "In watchdog!" << endl;
+            cout << "In watchdog!" << endl;
             if(!p || !p->isRunning())
                 continue;
-            /*const Resources* temp = p->getInstantResources();
+            const Resources* temp = p->getInstantResources();
             if(temp)    //process is running, log resources
-                p->resourcesHistory.push_back(temp);*/
+                p->resourcesHistory.push_back(temp);
         }
+        processesSetMutex.unlock();
         Thread::usleep(SAMPLING);
     }
 #pragma clang diagnostic pop
@@ -56,29 +61,42 @@ Process::Process(const std::string & c) :
                 Utils::removeTrailingNR(buf);
                 char* _p = nullptr;
                 auto tempPID = (int)strtol(buf,&_p,10);
-                if (!readANumber && (int)(_p-buf)==(int)strlen(buf)){
-                    cout << "Child process was created on PID " << tempPID << " with command = \"" << command << "\"" << endl;
-                    this->PID = tempPID;
+                //tempPID>=10 is in the following if because the ampersand output(usually '1' unless the command starts background processes too) and the output of echo come unordered
+                if ((tempPID>=10) && !readANumber && (int)(_p-buf)==(int)strlen(buf)){
+                    this->PID = tempPID - 1;    //TODO: wtf?
+                    cout << "Child process was created on PID " << this->PID << " with command = \"" << command << "\"" << endl;
                     readANumber=true;
+                    //break;   //comment this to make it read all of the output
                 }
             }
+            //cerr << "Output: " << output.str() << endl;
             clock_gettime(CLOCK_MONOTONIC,tempEndTime);
-            if(this->end_time)
-                delete this->end_time;
+            _finished=true;
+            delete this->end_time;
             this->end_time=tempEndTime;
             tempEndTime = nullptr;
-            if(this->out)
+            if(this->out)//!hadErrorStarting() &&
                 pclose(this->out);
             this->out = nullptr;
+
             if(!readANumber)
                 cout << "Child process of command \"" << command << "\" failed to start!" << endl;
-        }) {
+        }, [this](){this->_finished=true;}) {
+    _dynamically_allocated = Process::lastCreateIsDynamic;
+    Process::lastCreateIsDynamic = false;
+    Process::newOperatorMutex.unlock();
+    processesSetMutex.lock();
+    Process::processes.insert(this);
+    processesSetMutex.unlock();
     runWatchdog();
 }
 
 //TODO: aqui
 Process::~Process() {
-    cerr << "Clearing memory " << resourcesHistory.size() << endl;
+    cout << "Clearing memory " << resourcesHistory.size() << endl;
+    processesSetMutex.lock();
+    Process::processes.erase(this);
+    processesSetMutex.unlock();
     kill();
     delete_reset(start_time);
     delete_reset(end_time);
@@ -96,6 +114,9 @@ Process::~Process() {
 void Process::start() {
     if(hasStarted())
         return;
+
+    _started = true;
+
     start_time = new timespec;
     bzero(start_time,sizeof(struct timespec));
     string tmp=command + " &> /dev/null & echo $!";
@@ -107,8 +128,15 @@ void Process::start() {
 }
 
 void Process::kill() {
-    if(isRunning())
-        system((string("kill ") + to_string(PID)).c_str());
+    if(isRunning()) {
+        if(PID>1) {
+            string cmd=string("kill ") + to_string(PID);
+            cerr<<cmd<<endl;
+            system(cmd.c_str());
+        } else {
+            cerr << "PID is -1" << endl;
+        }
+    }
 }
 
 long int Process::getUpTime() const {
@@ -123,26 +151,35 @@ long int Process::getUpTime() const {
 }
 
 bool Process::isRunning() const {
-    //TODO: change this to actually check if it is running
-    return outputReader.isRunning();
+    //cerr << "isRunning(): outputReader.isRunning()=" << outputReader.isRunning() << " (hasStarted()&&!isDone())=" << (hasStarted()&&!isDone()) << endl;
+    return outputReader.isRunning() || (hasStarted()&&!isDone());
 }
 
 bool Process::isDone() const {
-    return start_time&&end_time;
+    return _finished;
+}
+
+bool Process::isDynamic() const {
+    return _dynamically_allocated;
 }
 
 bool Process::hasStarted() const {
-    return start_time!=nullptr;
+    return _started;
 }
 
 bool Process::hadErrorStarting() const {
-    return start_time&&(PID<0);
+    return hasStarted()&&(PID<0);
 }
 
 void Process::join() const {
     if(!isRunning())
         return;
     outputReader.join();
+    //cerr << "Finished thread join" << endl;
+    while(!_finished) { //to wait for cleanup code after outputReader thread ends
+        Thread::usleep(1);
+    }
+    //cerr << "Finished process join" << endl;
 }
 
 std::string Process::getOutput() const {
