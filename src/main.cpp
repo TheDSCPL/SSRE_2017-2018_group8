@@ -116,14 +116,14 @@ int main (int argc, char** argv)
     for(const auto & e : args.getUsedOptions())
         cout << *e << endl;*/
 
-    Process * test = new Process("sleep 1");
+    Process * test = new Process("sleep 3000");
 
     test->start();
 
+    test->kill();
+
     test->join();
     //Thread::usleep(10);
-
-    //test->kill();
 
     delete test;
 

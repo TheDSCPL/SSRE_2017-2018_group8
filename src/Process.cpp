@@ -23,7 +23,7 @@ Thread Process::watchdog([](){
     while(true) {
         processesSetMutex.lock();
         for(Process* p : Process::processes) {
-            cout << "In watchdog!" << endl;
+            //cout << "In watchdog!" << endl;
             if(!p || !p->isRunning())
                 continue;
             const Resources* temp = p->getInstantResources();
@@ -66,6 +66,7 @@ Process::Process(const std::string & c) :
                     this->PID = tempPID - 1;    //TODO: wtf?
                     cout << "Child process was created on PID " << this->PID << " with command = \"" << command << "\"" << endl;
                     readANumber=true;
+                    startMutex.unlock();
                     //break;   //comment this to make it read all of the output
                 }
             }
@@ -79,8 +80,10 @@ Process::Process(const std::string & c) :
                 pclose(this->out);
             this->out = nullptr;
 
-            if(!readANumber)
+            if(!readANumber) {
                 cout << "Child process of command \"" << command << "\" failed to start!" << endl;
+                startMutex.unlock();
+            }
         }, [this](){this->_finished=true;}) {
     _dynamically_allocated = Process::lastCreateIsDynamic;
     Process::lastCreateIsDynamic = false;
@@ -91,7 +94,6 @@ Process::Process(const std::string & c) :
     runWatchdog();
 }
 
-//TODO: aqui
 Process::~Process() {
     cout << "Clearing memory " << resourcesHistory.size() << endl;
     processesSetMutex.lock();
@@ -115,6 +117,8 @@ void Process::start() {
     if(hasStarted())
         return;
 
+    startMutex.lock();
+
     _started = true;
 
     start_time = new timespec;
@@ -128,6 +132,8 @@ void Process::start() {
 }
 
 void Process::kill() {
+    //make sure the process isn't still starting
+    startMutex.lock();
     if(isRunning()) {
         if(PID>1) {
             string cmd=string("kill ") + to_string(PID);
@@ -137,6 +143,7 @@ void Process::kill() {
             cerr << "PID is -1" << endl;
         }
     }
+    startMutex.unlock();
 }
 
 long int Process::getUpTime() const {
