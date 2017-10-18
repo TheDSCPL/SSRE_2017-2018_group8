@@ -4,9 +4,7 @@
 #include "../headers/exitCodes.hpp"
 #include "../headers/Utils.hpp"
 #include <cstring>
-#include <cstdlib>
-#include <unistd.h>
-#include <wait.h>
+#include <fstream>
 
 using namespace std;
 using namespace SSRE_CONSTANTS;
@@ -24,7 +22,7 @@ Thread Process::watchdog([](){
         processesSetMutex.lock();
         for(Process* p : Process::processes) {
             //cout << "In watchdog!" << endl;
-            if(!p || !p->isRunning())
+            if(!p || !p->isRunning() || p->PID<10)
                 continue;
             const Resources* temp = p->getInstantResources();
             if(temp)    //process is running, log resources
@@ -123,7 +121,7 @@ void Process::start() {
 
     start_time = new timespec;
     bzero(start_time,sizeof(struct timespec));
-    string tmp=command + " &> /dev/null & echo $!";
+    string tmp=string("( ") + command + " ) &> /dev/null & echo $!";
     //out will be closed in the destructor because 'pclose' waits for the end of the process
     out=popen(tmp.c_str(),"r");
     clock_gettime(CLOCK_MONOTONIC,start_time);
@@ -197,6 +195,12 @@ const std::vector<const Resources*>& Process::getResourcesHistory() const {
     return this->resourcesHistory;
 }
 
-Resources::Resources(int PID) : PID(0), disk(0), memory(0), cpu(0){
-    //TODO:
+Resources::Resources(int PID) : PID(PID), disk(0), memory(0), cpu(0){
+    if(PID <= 10) { //this shouldn't be a valid PID
+        cerr << "Tried to get resources from invalid PID (" << PID << ")! Resources will default to 0!" << endl;
+        disk = memory = cpu = 0;
+    } else {
+        ifstream proc;
+        //proc.open(string("/proc/") + to_string(PID) + )
+    }
 }

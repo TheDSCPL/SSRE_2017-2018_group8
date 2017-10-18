@@ -20,7 +20,7 @@ class Process{
     volatile bool _started=false, _finished=false, _dynamically_allocated=false; //to prevent join to immediately leave after an immediate subsequent call to start because the thread hasn't started yet.
 
     std::vector<const Resources*> resourcesHistory;
-    Mutex startMutex;   //locked when start is called and unlocked when PID is found
+    mutable Mutex startMutex;   //locked when start is called and unlocked when PID is found
 
     //Caller should delete the pointer after use
     //Returns nullptr if the process is not running;
@@ -57,12 +57,15 @@ public:
 };
 
 class Resources{
-    friend class Process;
+    int PID, disk, memory, cpu;
 public:
     explicit Resources(int PID);
-    Resources(int PID, int disk, int memory, int cpu);
+    //Resources(int PID, int disk, int memory, int cpu);
     //~Resources();
-    const int PID, disk, memory, cpu;
+    const int & getPID() const;
+    const int & getDisk() const;
+    const int & getMemory() const;
+    const int & getCPU() const;
 };
 
 #endif

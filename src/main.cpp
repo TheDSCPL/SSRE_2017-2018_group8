@@ -116,22 +116,20 @@ int main (int argc, char** argv)
     for(const auto & e : args.getUsedOptions())
         cout << *e << endl;*/
 
-    Process * test = new Process("sleep 3000");
+    Process * test = new Process("sleep 4");
 
     test->start();
 
-    test->kill();
+    //test->kill();
 
     test->join();
     //Thread::usleep(10);
 
     delete test;
 
-    /*Process test("sleep 1");
+    Process test1("sleep 5");
 
-    cout << test.isDynamic() << endl;
+    test1.start();
 
-    test.start();
-
-    test.join();*/
+    test1.join();
 }
