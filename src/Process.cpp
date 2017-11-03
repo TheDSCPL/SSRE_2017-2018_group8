@@ -26,7 +26,7 @@ Thread Process::watchdog([](){
                 continue;
             const Resources* temp = p->getInstantResources();
             if(temp)    //process is running, log resources
-                p->resourcesHistory.push_back(temp);
+                p->resourcesHistory.insert(temp);
         }
         processesSetMutex.unlock();
         Thread::usleep(SAMPLING);
@@ -45,8 +45,9 @@ Resources* Process::getInstantResources() const {
     return new Resources(this->PID);
 }
 
-Process::Process(const std::string & c) :
+Process::Process(const std::string & c, bool b) :
         command(c),
+        monitor(b),
         outputReader([this](){
             char buf[20];
             bzero(buf,20);
@@ -87,7 +88,8 @@ Process::Process(const std::string & c) :
     Process::lastCreateIsDynamic = false;
     Process::newOperatorMutex.unlock();
     processesSetMutex.lock();
-    Process::processes.insert(this);
+    if(monitor)
+        Process::processes.insert(this);
     processesSetMutex.unlock();
     runWatchdog();
 }
@@ -191,7 +193,7 @@ std::string Process::getOutput() const {
     return output.str();
 }
 
-const std::vector<const Resources*>& Process::getResourcesHistory() const {
+const std::set<const Resources*>& Process::getResourcesHistory() const {
     return this->resourcesHistory;
 }
 

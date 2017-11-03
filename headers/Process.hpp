@@ -19,20 +19,21 @@ class Process{
     FILE* out = nullptr;
     volatile bool _started=false, _finished=false, _dynamically_allocated=false; //to prevent join to immediately leave after an immediate subsequent call to start because the thread hasn't started yet.
 
-    std::vector<const Resources*> resourcesHistory;
+    std::set<const Resources*> resourcesHistory;
     mutable Mutex startMutex;   //locked when start is called and unlocked when PID is found
 
     //Caller should delete the pointer after use
     //Returns nullptr if the process is not running;
     Resources* getInstantResources() const;
     const std::string command;
+    const bool monitor; //if this process should have its resources monitored
     std::stringstream output;
     Thread outputReader;
     //attempts to start the process. Here to avoid the sparse error of PID as 1;
 
 public:
     //'command' shouldn't have an ampersign (&) at the end!
-    Process(const std::string&);
+    Process(const std::string&, bool monitor = true);
     ~Process();
     void start();
     void kill();
@@ -47,7 +48,7 @@ public:
     void join() const;
     std::string getOutput() const;
 
-    const std::vector<const Resources*>& getResourcesHistory() const;
+    const std::set<const Resources*>& getResourcesHistory() const;
 
     void *operator new(size_t size){
         Process::newOperatorMutex.lock();
