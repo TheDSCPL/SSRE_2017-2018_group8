@@ -5,6 +5,7 @@
 #include "../headers/Utils.hpp"
 #include <cstring>
 #include <fstream>
+#include <cctype>
 
 using namespace std;
 using namespace SSRE_CONSTANTS;
@@ -19,15 +20,17 @@ Thread Process::watchdog([](){
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
     while(true) {
+        //cerr << "watchdog read processesSetMutex.lock()" << endl;
         processesSetMutex.lock();
         for(Process* p : Process::processes) {
             //cout << "In watchdog!" << endl;
             if(!p || !p->isRunning() || p->PID<10)
                 continue;
-            const Resources* temp = p->getInstantResources();
-            if(temp)    //process is running, log resources
-                p->resourcesHistory.insert(temp);
+            //TODO
+            p->lastIOread= p->getIOresources();
+            //cout << p->lastIOread << endl;
         }
+        //cerr << "watchdog read processesSetMutex.unlock()" << endl;
         processesSetMutex.unlock();
         Thread::usleep(SAMPLING);
     }
@@ -39,10 +42,14 @@ void Process::runWatchdog() {
         Process::watchdog.start();
 }
 
-Resources* Process::getInstantResources() const {
-    if(!isRunning())
-        return nullptr;
-    return new Resources(this->PID);
+string Process::getIOresources() const {
+    if(!isRunning() || PID < 0)
+        return string();
+    //Process __measurer(string("pidstat -p ") + to_string(PID) + " -duhrv",false);
+    Process __measurer(string("./IOoneShot.sh ") + to_string(PID),false);
+    __measurer.start();
+    __measurer.join();
+    return __measurer.getOutput();
 }
 
 Process::Process(const std::string & c, bool b) :
@@ -62,8 +69,9 @@ Process::Process(const std::string & c, bool b) :
                 auto tempPID = (int)strtol(buf,&_p,10);
                 //tempPID>=10 is in the following if because the ampersand output(usually '1' unless the command starts background processes too) and the output of echo come unordered
                 if ((tempPID>=10) && !readANumber && (int)(_p-buf)==(int)strlen(buf)){
-                    this->PID = tempPID - 1;    //TODO: wtf?
-                    cout << "Child process was created on PID " << this->PID << " with command = \"" << command << "\"" << endl;
+                    this->PID = tempPID;    //TODO: wtf?
+                    if(monitor)
+                        cout << "Child process was created on PID " << this->PID << " with command = \"" << command << "\"" << endl;
                     readANumber=true;
                     startMutex.unlock();
                     //break;   //comment this to make it read all of the output
@@ -87,26 +95,30 @@ Process::Process(const std::string & c, bool b) :
     _dynamically_allocated = Process::lastCreateIsDynamic;
     Process::lastCreateIsDynamic = false;
     Process::newOperatorMutex.unlock();
-    processesSetMutex.lock();
     if(monitor)
+    {
+        //cerr << "Process (" << c << ", " << b << ") processesSetMutex.lock()" << endl;
+        processesSetMutex.lock();
         Process::processes.insert(this);
-    processesSetMutex.unlock();
+        //cerr << "Process (" << c << ", " << b << ") processesSetMutex.unlock()" << endl;
+        processesSetMutex.unlock();
+    }
     runWatchdog();
 }
 
 Process::~Process() {
-    cout << "Clearing memory " << resourcesHistory.size() << endl;
-    processesSetMutex.lock();
-    Process::processes.erase(this);
-    processesSetMutex.unlock();
+    //cout << "Clearing memory " << resourcesHistory.size() << endl;
+    if(monitor) {
+        //cerr << "~Process processesSetMutex.lock()" << endl;
+        processesSetMutex.lock();
+        Process::processes.erase(this);
+        //cerr << "~Process processesSetMutex.unlock()" << endl;
+        processesSetMutex.unlock();
+    }
     kill();
     delete_reset(start_time);
     delete_reset(end_time);
 
-    for(const Resources* r : resourcesHistory)
-        delete(const_cast<Resources*>(r));
-
-    resourcesHistory.clear();
     if(out) {
         pclose(out);
         out = nullptr;
@@ -123,7 +135,13 @@ void Process::start() {
 
     start_time = new timespec;
     bzero(start_time,sizeof(struct timespec));
-    string tmp=string("( ") + command + " ) &> /dev/null & echo $!";
+    string tmp;
+    if(monitor)
+        tmp=string("( /usr/bin/time --format=\"Elapsed: %e\\nCPU%%: %P\\nUser-time: %U\\nSystem-time: %S\\nMax-memory: %MKB\\nExit status: %x\\nCommand: \\\"%C\\\"\\n\" ") + command + " ) 2>&1 & echo $(($! + 1))";
+    else
+        tmp=string("( ") + command + " ) &> /dev/null & echo $(($! - 1))";
+    //cout << tmp << endl;
+    //exit(1);
     //out will be closed in the destructor because 'pclose' waits for the end of the process
     out=popen(tmp.c_str(),"r");
     clock_gettime(CLOCK_MONOTONIC,start_time);
@@ -193,16 +211,19 @@ std::string Process::getOutput() const {
     return output.str();
 }
 
-const std::set<const Resources*>& Process::getResourcesHistory() const {
-    return this->resourcesHistory;
-}
+string Process::getResources() const {
+    if(!isDone())
+        return string();
+    stringstream temp,ret;
+    temp << getOutput() << lastIOread;
+    string buf;
 
-Resources::Resources(int PID) : PID(PID), disk(0), memory(0), cpu(0){
-    if(PID <= 10) { //this shouldn't be a valid PID
-        cerr << "Tried to get resources from invalid PID (" << PID << ")! Resources will default to 0!" << endl;
-        disk = memory = cpu = 0;
-    } else {
-        ifstream proc;
-        //proc.open(string("/proc/") + to_string(PID) + )
+    while(temp.peek() != EOF) {
+        getline(temp,buf);
+        //cout << "\"" << buf << "\"" << endl;
+        if(!Utils::onlyDigitsAndWhiteSpace(buf))
+            ret << buf << endl;
     }
+
+    return ret.str();
 }

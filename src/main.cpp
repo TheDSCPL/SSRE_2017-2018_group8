@@ -5,6 +5,7 @@
 
 #include "../headers/Options.hpp"
 #include "../headers/Process.hpp"
+#include "../headers/Utils.hpp"
 
 using namespace std;
 
@@ -116,7 +117,7 @@ int main (int argc, char** argv)
     for(const auto & e : args.getUsedOptions())
         cout << *e << endl;*/
 
-    Process * test = new Process("sleep 4");
+    Process * test = new Process("Python/slave.py 100 0 0 0");
 
     test->start();
 
@@ -125,9 +126,13 @@ int main (int argc, char** argv)
     test->join();
     //Thread::usleep(10);
 
+    cout << test->getResources() << endl;
+
     delete test;
 
-    Process test1("sleep 5");
+    return 0;
+
+    Process test1("sleep 3");
 
     test1.start();
 

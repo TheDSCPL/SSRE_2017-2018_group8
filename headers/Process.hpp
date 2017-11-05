@@ -19,15 +19,16 @@ class Process{
     FILE* out = nullptr;
     volatile bool _started=false, _finished=false, _dynamically_allocated=false; //to prevent join to immediately leave after an immediate subsequent call to start because the thread hasn't started yet.
 
-    std::set<const Resources*> resourcesHistory;
     mutable Mutex startMutex;   //locked when start is called and unlocked when PID is found
 
     //Caller should delete the pointer after use
     //Returns nullptr if the process is not running;
-    Resources* getInstantResources() const;
+    std::string getIOresources() const;
     const std::string command;
     const bool monitor; //if this process should have its resources monitored
     std::stringstream output;
+
+    std::string lastIOread;
     Thread outputReader;
     //attempts to start the process. Here to avoid the sparse error of PID as 1;
 
@@ -48,25 +49,13 @@ public:
     void join() const;
     std::string getOutput() const;
 
-    const std::set<const Resources*>& getResourcesHistory() const;
+    std::string getResources() const;
 
     void *operator new(size_t size){
         Process::newOperatorMutex.lock();
         Process::lastCreateIsDynamic = true;
         return ::operator new(size);
     }
-};
-
-class Resources{
-    int PID, disk, memory, cpu;
-public:
-    explicit Resources(int PID);
-    //Resources(int PID, int disk, int memory, int cpu);
-    //~Resources();
-    const int & getPID() const;
-    const int & getDisk() const;
-    const int & getMemory() const;
-    const int & getCPU() const;
 };
 
 #endif

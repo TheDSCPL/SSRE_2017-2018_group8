@@ -2,5 +2,5 @@
 
 namespace SSRE_CONSTANTS {
     //in milliseconds
-    const static unsigned int SAMPLING = 1;
+    const static unsigned int SAMPLING = 10;
 }
