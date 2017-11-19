@@ -227,3 +227,39 @@ string Process::getResources() const {
 
     return ret.str();
 }
+
+const regex Resources::cpuTimeR = regex("User-time: ([0-9.]+)");
+const regex Resources::memKbytesR = regex("Max-memory: ([0-9]+)KB");
+const regex Resources::readBytesR = regex(R"(rchar:\s*([0-9]+)\s*Bytes)");
+
+Resources::Resources(std::string s) {
+
+    smatch matches;
+    regex_search(s,matches,cpuTimeR);
+    if(matches.size()<2)
+        throw invalid_argument("Couldn't find cpuTime");
+    cpuTime=(unsigned int)(atof(matches[1].str().c_str())*1000);
+    //cout << "cpuTime: " << cpuTime << endl;
+
+    regex_search(s,matches,memKbytesR);
+    memKbytes=(unsigned int)atoi(matches[1].str().c_str());
+    //cout << "memKbytes: " << memKbytes << endl;
+
+    regex_search(s,matches,readBytesR);
+    readBytes=(unsigned int)atoi(matches[1].str().c_str());
+    //cout << "readBytes: " << readBytes << endl;
+
+    printable=std::to_string(memKbytes)+","+std::to_string(cpuTime)+","+std::to_string(readBytes);
+}
+
+unsigned int Resources::getCpuTime() const {
+    return cpuTime;
+}
+
+unsigned int Resources::getReadBytes() const {
+    return readBytes;
+}
+
+unsigned int Resources::getMemKbytes() const {
+    return memKbytes;
+}

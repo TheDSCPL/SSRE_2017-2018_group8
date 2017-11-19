@@ -117,7 +117,7 @@ int main (int argc, char** argv)
     for(const auto & e : args.getUsedOptions())
         cout << *e << endl;*/
 
-    Process * test = new Process("Python/slave.py 100 0 0 0");
+    Process * test = new Process("../Projeto/Python/slave.py 100 0 0 0");//executable #execs {columa(algoritmo)} {linha(implementação na linguagem)} {0-encript/1-decrypt (sempre 0)}
 
     test->start();
 
@@ -128,13 +128,9 @@ int main (int argc, char** argv)
 
     cout << test->getResources() << endl;
 
+    cout << Resources(test->getResources()) << endl;
+
     delete test;
 
     return 0;
-
-    Process test1("sleep 3");
-
-    test1.start();
-
-    test1.join();
 }

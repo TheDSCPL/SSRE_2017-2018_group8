@@ -2,6 +2,7 @@
 #define SSRE_PROCESS_HPP
 #include <sstream>
 #include <set>
+#include <regex>
 
 #include "Thread.hpp"
 
@@ -55,6 +56,23 @@ public:
         Process::newOperatorMutex.lock();
         Process::lastCreateIsDynamic = true;
         return ::operator new(size);
+    }
+};
+
+class Resources {
+    friend class Process;
+    unsigned int cpuTime, readBytes, memKbytes; //cpuTime in milliseconds
+    std::string printable;
+
+    const static std::regex cpuTimeR, readBytesR, memKbytesR;
+public:
+    Resources(std::string s);
+    unsigned int getCpuTime() const;
+    unsigned int getReadBytes() const;
+    unsigned int getMemKbytes() const;
+
+    operator const char *() const {
+        return printable.c_str();
     }
 };
 
