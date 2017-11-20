@@ -4,14 +4,14 @@
 import sys
 import itertools
 
-sys.path.append('Python/cryptopy')
+sys.path.append('Projeto/Python/cryptopy')
 
 import crypto.cipher.rijndael
 import crypto.cipher.aes
 import crypto.cipher.cbc
 
 KEY = "ligTNvexz0Zr1cJQEBrEbRwyHkTYJORV"
-DATA_FILE_PATH = "data"
+DATA_FILE_PATH = "Projeto/data"
 
 iter_count = int(sys.argv[1])
 algorithm = int(sys.argv[2])

@@ -6,10 +6,13 @@
 #include "../headers/Options.hpp"
 #include "../headers/Process.hpp"
 #include "../headers/Utils.hpp"
+#include "../headers/Properties.hpp"
 
 using namespace std;
 
 //static int verbose_flag;
+
+
 
 int main (int argc, char** argv)
 {
@@ -117,7 +120,7 @@ int main (int argc, char** argv)
     for(const auto & e : args.getUsedOptions())
         cout << *e << endl;*/
 
-    Process * test = new Process("../Projeto/Python/slave.py 100 0 0 0");//executable #execs {columa(algoritmo)} {linha(implementação na linguagem)} {0-encript/1-decrypt (sempre 0)}
+    Process * test = new Process(Properties::getDefault().getProperty("SLAVES_DIRECTORY")+"Python/slave.py 100 0 0 0");//executable #execs {columa(algoritmo)} {linha(implementação na linguagem)} {0-encript/1-decrypt (sempre 0)}
 
     test->start();
 
@@ -126,9 +129,9 @@ int main (int argc, char** argv)
     test->join();
     //Thread::usleep(10);
 
-    cout << test->getResources() << endl;
+    //cout << test->_getResources() << endl;
 
-    cout << Resources(test->getResources()) << endl;
+    cout << test->getResourses() << endl;
 
     delete test;
 

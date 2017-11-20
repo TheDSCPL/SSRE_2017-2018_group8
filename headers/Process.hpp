@@ -34,6 +34,9 @@ class Process{
     //attempts to start the process. Here to avoid the sparse error of PID as 1;
 
 public:
+    std::string _getResources() const;
+
+public:
     //'command' shouldn't have an ampersign (&) at the end!
     Process(const std::string&, bool monitor = true);
     ~Process();
@@ -49,8 +52,7 @@ public:
     bool hadErrorStarting() const;
     void join() const;
     std::string getOutput() const;
-
-    std::string getResources() const;
+    Resources getResourses() const;
 
     void *operator new(size_t size){
         Process::newOperatorMutex.lock();

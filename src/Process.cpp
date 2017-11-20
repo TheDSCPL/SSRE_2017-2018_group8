@@ -3,6 +3,7 @@
 #include "../headers/Constants.hpp"
 #include "../headers/exitCodes.hpp"
 #include "../headers/Utils.hpp"
+#include "../headers/Properties.hpp"
 #include <cstring>
 #include <fstream>
 #include <cctype>
@@ -137,9 +138,15 @@ void Process::start() {
     bzero(start_time,sizeof(struct timespec));
     string tmp;
     if(monitor)
-        tmp=string("( /usr/bin/time --format=\"Elapsed: %e\\nCPU%%: %P\\nUser-time: %U\\nSystem-time: %S\\nMax-memory: %MKB\\nExit status: %x\\nCommand: \\\"%C\\\"\\n\" ") + command + " ) 2>&1 & echo $(($! + 1))";
+        tmp=    Properties::getDefault().getProperty("PRE_COMMAND_STRING") +
+                R"((/usr/bin/time --format="Elapsed: %e\nCPU%%: %P\nUser-time: %U\nSystem-time: %S\nMax-memory: %MKB\nExit status: %x\nCommand: \"%C\"\n" )" +
+                command +
+                " ) 2>&1 & echo $(($! + 1))";
     else
-        tmp=string("( ") + command + " ) &> /dev/null & echo $(($! - 1))";
+        tmp=    Properties::getDefault().getProperty("PRE_COMMAND_STRING") +
+                string("( ") +
+                command +
+                " ) &> /dev/null & echo $(($! - 1))";
     //cout << tmp << endl;
     //exit(1);
     //out will be closed in the destructor because 'pclose' waits for the end of the process
@@ -211,7 +218,11 @@ std::string Process::getOutput() const {
     return output.str();
 }
 
-string Process::getResources() const {
+Resources Process::getResourses() const {
+    return Resources(_getResources());
+}
+
+string Process::_getResources() const {
     if(!isDone())
         return string();
     stringstream temp,ret;
@@ -228,9 +239,9 @@ string Process::getResources() const {
     return ret.str();
 }
 
-const regex Resources::cpuTimeR = regex("User-time: ([0-9.]+)");
-const regex Resources::memKbytesR = regex("Max-memory: ([0-9]+)KB");
-const regex Resources::readBytesR = regex(R"(rchar:\s*([0-9]+)\s*Bytes)");
+const regex Resources::cpuTimeR     = regex(R"(User-time: ([0-9.]+))");
+const regex Resources::memKbytesR   = regex(R"(Max-memory: ([0-9]+)KB)");
+const regex Resources::readBytesR   = regex(R"(rchar:\s*([0-9]+)\s*Bytes)");
 
 Resources::Resources(std::string s) {
 
