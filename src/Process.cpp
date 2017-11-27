@@ -27,8 +27,9 @@ Thread Process::watchdog([](){
             //cout << "In watchdog!" << endl;
             if(!p || !p->isRunning() || p->PID<10)
                 continue;
-            //TODO
-            p->lastIOread= p->getIOresources();
+            string _tmp = p->getIOresources();
+            if(!_tmp.empty())
+                p->lastIOread = _tmp;
             //cout << p->lastIOread << endl;
         }
         //cerr << "watchdog read processesSetMutex.unlock()" << endl;
