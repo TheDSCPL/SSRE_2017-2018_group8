@@ -7,6 +7,7 @@
 #include "../headers/Process.hpp"
 #include "../headers/Utils.hpp"
 #include "../headers/Properties.hpp"
+#include "../headers/Test.hpp"
 
 using namespace std;
 
@@ -120,20 +121,33 @@ int main (int argc, char** argv)
     for(const auto & e : args.getUsedOptions())
         cout << *e << endl;*/
 
-    Process * test = new Process(Properties::getDefault().getProperty("SLAVES_DIRECTORY")+"Python/slave.py 100 0 0 0");//executable #execs {columa(algoritmo)} {linha(implementação na linguagem)} {0-encript/1-decrypt (sempre 0)}
+    //Process * test = new Process(Properties::getDefault().getProperty("SLAVES_DIRECTORY")+"Python/slave.py Projeto/data10M 1000 0 0 0");//executable data_file #execs {columa(algoritmo)} {linha(implementação na linguagem)} {0-encript/1-decrypt (sempre 0)}
 
-    test->start();
+    //test->start();
 
     //test->kill();
 
-    test->join();
+    //test->join();
     //Thread::usleep(10);
 
     //cout << test->_getResources() << endl;
 
-    cout << test->getResourses() << endl;
+    //cout << test->getResourses() << endl;
 
-    delete test;
+    //delete test;
+
+    //cout << Test(Test::Languages::C,"100M",0,0) << endl;
+    //cout << Test(Test::Languages::Java,"100M",0,0) << endl;
+
+    ofstream csv;
+    csv.open(argc > 1 ? argv[1] : "output");
+    csv << TestBatch::getHeader() << endl;
+    TestBatch(Test::Languages::C).runAndExport(csv);
+    TestBatch(Test::Languages::Cpp).runAndExport(csv);
+    TestBatch(Test::Languages::Java).runAndExport(csv);
+    TestBatch(Test::Languages::Python).runAndExport(csv);
+    //csv << TestBatch(Test::Languages::C) << endl;
+    csv.close();
 
     return 0;
 }

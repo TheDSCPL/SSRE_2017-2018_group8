@@ -67,8 +67,8 @@ class Resources {
     std::string printable;
 
     const static std::regex cpuTimeR, readBytesR, memKbytesR;
-public:
     Resources(std::string s);
+public:
     unsigned int getCpuTime() const;
     unsigned int getReadBytes() const;
     unsigned int getMemKbytes() const;

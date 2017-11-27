@@ -23,8 +23,7 @@
 using namespace std;
 using namespace CryptoPP;
 
-#define DATA_FILE_PATH "../data"
-
+char* data_file_path;
 int mode;
 
 unsigned char* key = (unsigned char*)"ligTNvexz0Zr1cJQEBrEbRwyHkTYJORV";
@@ -38,16 +37,16 @@ char* rsa_key_e = (char*)"0x10001";
 #define ENCRYPT_MACRO(algorithm, keysize) \
 CBC_Mode<algorithm>::Encryption alg; \
 alg.SetKeyWithIV(key, keysize, iv); \
-FileSource file(DATA_FILE_PATH, true, new StreamTransformationFilter(alg, new FileSink("/dev/null")));
+FileSource file(data_file_path, true, new StreamTransformationFilter(alg, new FileSink("/dev/null")));
 
 #define DECRYPT_MACRO(algorithm, keysize) \
 CBC_Mode<algorithm>::Decryption alg; \
 alg.SetKeyWithIV(key, keysize, iv); \
-FileSource file(DATA_FILE_PATH, true, new StreamTransformationFilter(alg, new FileSink("/dev/null")));
+FileSource file(data_file_path, true, new StreamTransformationFilter(alg, new FileSink("/dev/null")));
 
 #define DIGEST_MACRO(algorithm) \
 algorithm hash; \
-FileSource file(DATA_FILE_PATH, true, new HashFilter(hash, new FileSink("/dev/null"))); \
+FileSource file(data_file_path, true, new HashFilter(hash, new FileSink("/dev/null"))); \
 
 void cryptopp_md5() {
     DIGEST_MACRO(Weak::MD5)
@@ -84,7 +83,7 @@ void cryptopp_rsa() {
     
     AutoSeededRandomPool rng;
     RSAES_OAEP_SHA_Encryptor enc(publicKey);
-    FileSource file(DATA_FILE_PATH, true, new PK_EncryptorFilter(rng, enc, new FileSink("/dev/null")));
+    FileSource file(data_file_path, true, new PK_EncryptorFilter(rng, enc, new FileSink("/dev/null")));
 }
 
 // MARK: - MAIN
@@ -95,15 +94,16 @@ fptr functions[10][10] = {
 };
 
 int main(int argc, char* argv[]) {
-    if (argc < 5) {
+    if (argc < 6) {
         cout << "Incomplete argument list" << endl;
         return -1;
     }
-    
-    int iter_count = strtol(argv[1], (char**)NULL, 10);
-    int algorithm = strtol(argv[2], (char**)NULL, 10);
-    int library = strtol(argv[3], (char**)NULL, 10);
-    mode = strtol(argv[4], (char**)NULL, 10);
+
+    data_file_path = argv[1];
+    int iter_count = strtol(argv[2], (char**)NULL, 10);
+    int algorithm = strtol(argv[3], (char**)NULL, 10);
+    int library = strtol(argv[4], (char**)NULL, 10);
+    mode = strtol(argv[5], (char**)NULL, 10);
     
     if (functions[library][algorithm]) {
         int i;

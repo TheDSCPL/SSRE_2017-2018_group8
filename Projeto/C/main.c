@@ -9,7 +9,6 @@
 #include <stdlib.h>
 
 #define FILE_READ_BLOCK_SIZE 4096 // Smaller values create an IO bottleneck and algorithms are slower
-#define DATA_FILE_PATH "../data"
 
 FILE *data_file;
 int mode;
@@ -206,27 +205,27 @@ void gcrypt_rsa() {
 
 // MARK: - NaCl
 
-#include "nacl/crypto_hash_sha256.h"
+//#include "nacl/crypto_hash_sha256.h"
 
-void nacl_sha256() {
-    static unsigned char* input = NULL;
-    static unsigned long long length;
-    static int initialized = 0;
+// void nacl_sha256() {
+//     static unsigned char* input = NULL;
+//     static unsigned long long length;
+//     static int initialized = 0;
     
-    if (!initialized) {
-        length = load_file(data_file, &input);
-        if (!input) {
-            printf("Malloc failed on nacl_sha256\n");
-            exit(-1);
-        }
-        initialized = 1;
-    }
+//     if (!initialized) {
+//         length = load_file(data_file, &input);
+//         if (!input) {
+//             printf("Malloc failed on nacl_sha256\n");
+//             exit(-1);
+//         }
+//         initialized = 1;
+//     }
     
-    unsigned char digest[32];
-    crypto_hash_sha256(digest, input, length);
+//     unsigned char digest[32];
+//     crypto_hash_sha256(digest, input, length);
     
-    //print_bytes(digest, 32);
-}
+//     //print_bytes(digest, 32);
+// }
 
 // MARK: - OpenSSL
 
@@ -375,23 +374,23 @@ void openssl_rsa() {
 typedef void (*fptr)(void);
 fptr functions[10][10] = {
     {openssl_md5, openssl_sha1, openssl_sha256, openssl_3des, openssl_aes256, openssl_blowfish, openssl_rsa},
-    {gcrypt_md5, gcrypt_sha1, gcrypt_sha256, gcrypt_3des, gcrypt_aes256, gcrypt_blowfish, gcrypt_rsa},
-    {NULL, NULL, nacl_sha256, NULL, NULL, NULL, NULL},
+    {gcrypt_md5, gcrypt_sha1, gcrypt_sha256, gcrypt_3des, gcrypt_aes256, gcrypt_blowfish, gcrypt_rsa}
+    //{NULL, NULL, nacl_sha256, NULL, NULL, NULL, NULL},
 };
 
 
 int main(int argc, char **argv) {
-    if (argc < 5) {
+    if (argc < 6) {
         printf("Incomplete argument list\n");
         return -1;
     }
     
-    data_file = fopen(DATA_FILE_PATH, "rb");
+    data_file = fopen(argv[1], "rb");
     
-    int iter_count = strtol(argv[1], (char**)NULL, 10);
-    int algorithm = strtol(argv[2], (char**)NULL, 10);
-    int library = strtol(argv[3], (char**)NULL, 10);
-    mode = strtol(argv[4], (char**)NULL, 10);
+    int iter_count = strtol(argv[2], (char**)NULL, 10);
+    int algorithm = strtol(argv[3], (char**)NULL, 10);
+    int library = strtol(argv[4], (char**)NULL, 10);
+    mode = strtol(argv[5], (char**)NULL, 10);
     
     if (functions[library][algorithm]) {
         int i;

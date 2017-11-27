@@ -4,20 +4,18 @@
 import sys
 import itertools
 
-sys.path.append('Projeto/Python/cryptopy')
+sys.path.append("Projeto/Python/cryptopy")
 
 import crypto.cipher.rijndael
 import crypto.cipher.aes
 import crypto.cipher.cbc
 
 KEY = "ligTNvexz0Zr1cJQEBrEbRwyHkTYJORV"
-DATA_FILE_PATH = "Projeto/data"
 
-iter_count = int(sys.argv[1])
-algorithm = int(sys.argv[2])
-library = int(sys.argv[3])
-mode = int(sys.argv[4])
-
+iter_count = int(sys.argv[2])
+algorithm = int(sys.argv[3])
+library = int(sys.argv[4])
+mode = int(sys.argv[5])
 
 
 def open_data(path):
@@ -48,7 +46,7 @@ def aes256(mode):
 	elif mode == 1: result = alg.decrypt(data)
 
 
-data = open_data(DATA_FILE_PATH)
+data = open_data(sys.argv[1])
 
 func = None
 if algorithm == 0: func = md5
@@ -58,20 +56,5 @@ elif algorithm == 4: func = aes256(mode)
 if func:
 	for _ in itertools.repeat(None, iter_count):
 		func()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
