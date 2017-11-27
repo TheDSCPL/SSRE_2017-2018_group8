@@ -142,9 +142,9 @@ int main (int argc, char** argv)
     ofstream csv;
     csv.open(argc > 1 ? argv[1] : "output");
     csv << TestBatch::getHeader() << endl;
-    TestBatch(Test::Languages::C).runAndExport(csv);
-    TestBatch(Test::Languages::Cpp).runAndExport(csv);
-    TestBatch(Test::Languages::Java).runAndExport(csv);
+    //TestBatch(Test::Languages::C).runAndExport(csv);
+    //TestBatch(Test::Languages::Cpp).runAndExport(csv);
+    //TestBatch(Test::Languages::Java).runAndExport(csv);
     TestBatch(Test::Languages::Python).runAndExport(csv);
     //csv << TestBatch(Test::Languages::C) << endl;
     csv.close();

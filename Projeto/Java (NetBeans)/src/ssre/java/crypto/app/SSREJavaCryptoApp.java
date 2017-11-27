@@ -40,7 +40,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class SSREJavaCryptoApp {
 
-    public static final String dataFile = "../data";
+    public static String dataFile;
     public static RandomAccessFile dataFileStream;
     
     public static final String RSAKeyModulus = "00dd3b4da85453efe54bcea931c356e61ea4f2bbe9f5f363a8803c74c6f862310d9e8926b4744f5cf0efc5ad3a2bc4455e0cd8febc09ab9928279f768381142ec8b55033be4aa998512bf1c67ec6625a402a6b5b92900d1ca0c01de485436862d48e1f74a81bf72cf5e1ce46f041237e7b0c81e87a0d9f65711dfed3219a260a213a6da771a4885063ed26335a0e7d3b22415cd0dd4e3c4c641f856301a32189a5bba26a2f3a9f6ae0e293a1c2dc52d4125506ea26c2eedb5fcce48fc862b26840f40d384aeedfa5f8240e47bde4f02f93c0547cf0ee0d829ac92a827f3a5852a83d56b9c017e0f54955293433aecf4b3bf4e0f24c05aa06c2f499c1eb129267a70adbe351f947d46bcb5c541c608defabfa9152eddf2f30906d72938a063e3a0613b8c5b82e7c0cd6da71dcca78dde25cfab6cd9973b1207fa9a49564e580f7cd5cc672cfaf6aba50564633851ea47df824fc09d9fb8d4490dda39492caa6b8ec0d2a7b5dc30e508b03dd57a9144d1f2d34f76eecb4f47ad9157e0fec183ed611bdb3b771e7be484bac27139706483ee01c0c2a18e50632759192b491532b41227718627718d95e6b845c2c7c6118118d4d355ae121b26e329860baabf509eded99d57c54e9330fcd66fb92792132624dd3db5cfbf1a8bfa291388f12e1f77a114df84f4b46d8a6415f5775c634d6fdb7b484c2623cec31551a53bb23758d1d2b";
@@ -51,10 +51,11 @@ public class SSREJavaCryptoApp {
     public static void main(String[] args) throws FileNotFoundException, IOException {
         Security.addProvider(new BouncyCastleProvider());
         
-        int iterCount = Integer.parseInt(args[0]);
-        int algorithm = Integer.parseInt(args[1]);
-        //int library = Integer.parseInt(args[2]);
-        int mode = Integer.parseInt(args[3]);
+        dataFile = args[0];
+        int iterCount = Integer.parseInt(args[1]);
+        int algorithm = Integer.parseInt(args[2]);
+        //int library = Integer.parseInt(args[3]);
+        int mode = Integer.parseInt(args[4]);
         
         dataFileStream = new RandomAccessFile(dataFile, "r");
         

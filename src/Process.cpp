@@ -248,7 +248,7 @@ Resources::Resources(std::string s) {
     smatch matches;
     regex_search(s,matches,cpuTimeR);
     if(matches.size()<2)
-        throw invalid_argument("Couldn't find cpuTime");
+        throw invalid_argument("Couldn't find cpuTime ("+s+")");
     cpuTime=(unsigned int)(atof(matches[1].str().c_str())*1000);
     //cout << "cpuTime: " << cpuTime << endl;
 
